@@ -44,26 +44,19 @@ def fetch_and_sync_transactions():
         "X-Api-Key": API_KEY,
         "Accept": "application/json"
     }
-    
-    # المعاملات الأصلية التي تتطلبها المنصة
-    params = {
-        "resource": "syriatel",
-        "action": "history",
-        "gsm": GSM_NUMBER,
-        "period": "7"
-    }
 
-    # الاتصال بالرابط الأساسي مباشرة مع الـ params
+    target_url = f"{API_BASE_URL}/syriatel/history"
     response = requests.get(
-        API_BASE_URL,
+        target_url,
         headers=headers,
-        params=params
+        params={"gsm": GSM_NUMBER, "period": "7"}
     )
     
     if response.status_code != 200:
         raise Exception(response.text)
 
     result = response.json()
+    ...
     
     if not result.get("success"):
         return 0
