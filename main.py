@@ -48,8 +48,9 @@ def fetch_and_sync_transactions():
     }
     response = requests.get(API_BASE_URL, headers=headers, params=params)
     if response.status_code != 200:
-        raise Exception("فشل الاتصال بخدمة API")
-    
+    if response.status_code != 200:
+        raise Exception(f"الخطأ الفعلي: {response.status_code} - {response.text}")
+        
     result = response.json()
     if not result.get("success"):
         return 0
