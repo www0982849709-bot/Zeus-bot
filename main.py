@@ -48,9 +48,8 @@ def fetch_and_sync_transactions():
     }
     response = requests.get(API_BASE_URL, headers=headers, params=params)
     if response.status_code != 200:
-    if response.status_code != 200:
         raise Exception(f"الخطأ الفعلي: {response.status_code} - {response.text}")
-        
+    
     result = response.json()
     if not result.get("success"):
         return 0
@@ -70,6 +69,7 @@ def fetch_and_sync_transactions():
         added_count += 1
         
     return added_count
+    
 
 @app.get("/sync-payments")
 def sync_payments():
