@@ -44,19 +44,20 @@ def fetch_and_sync_transactions():
         "X-Api-Key": API_KEY,
         "Accept": "application/json"
     }
-        params = {
-        "resource": "status"
-        }
+    
+    # الرابط مع إضافة المسار /status
+    target_url = f"{API_BASE_URL}/status"
 
     response = requests.get(
-        API_BASE_URL, 
-        headers=headers, 
-        params=params
+        target_url,
+        headers=headers
     )
+    
     if response.status_code != 200:
-    raise Exception(response.text)
+        raise Exception(response.text)
 
     result = response.json()
+    
     if not result.get("success"):
         return 0
     
