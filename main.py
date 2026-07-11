@@ -69,9 +69,7 @@ def fetch_and_sync_transactions():
         added_count += 1
         
     return added_count
-    
-
-@app.get("/sync-payments")
+    @app.get("/sync-payments")
 def sync_payments():
     try:
         count = fetch_and_sync_transactions()
