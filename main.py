@@ -2,22 +2,28 @@ from fastapi import FastAPI, HTTPException
 import gspread
 from google.oauth2.service_account import Credentials
 import requests
-
-app = FastAPI()
 import os
 import json
 
-# إعداد الصلاحيات للاتصال بجوجل شيت عبر متغير البيئة في Railway
+app = FastAPI()
+
+# إعداد الصلاحيات للاتصال بجوجل شيت
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
-creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
-if creds_json:
-    creds_info = json.loads(creds_json)
-    creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
+# قراءة مفتاح الـ JSON من متغير البيئة وتحويله مباشرة
+creds_data = os.getenv("GOOGLE_CREDENTIALS_JSON")
+if creds_data:
+    # التأكد من التعامل مع النص سواء كان نص عادي أو مفسر
+    if creds_data.strip().startswith("{"):
+        creds_dict = json.loads(creds_data.strip())
+        creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+    else:
+        creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPES)
 else:
     creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPES)
 
 gc = gspread.authorize(creds)
+
 
 SPREADSHEET_NAME = "mydata"  # استبدل هذا باسم الشيت الخاص بك
 
