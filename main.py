@@ -13,27 +13,28 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 creds_json_string = os.getenv("GOOGLE_CREDENTIALS_JSON")
 
 if creds_json_string:
-    # تنظيف النص وقراءته كـ JSON
     creds_dict = json.loads(creds_json_string.strip())
 else:
-    # قاموس افتراضي أو إيقاف في حال عدم وجوده
     raise Exception("متغير البيئة GOOGLE_CREDENTIALS_JSON غير موجود في المنصة")
 
 creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 gc = gspread.authorize(creds)
 
+# معرف الجوجل شيت الخاص بك المأخوذ من الرابط مباشرة
 SPREADSHEET_ID = "1pDpFcMxRMJQkOTnx9rAIDtoRD-OjPeNddNafUf2iayQ"
+
 API_BASE_URL = "https://apisyria.com/api/v1"
 API_KEY = "9643d2da874acdf7a7f9219e41e3f19266a5ce3459c3834b4ed4ed61147e2594"
 GSM_NUMBER = "86623398"
 
 def get_sheet():
     try:
+        # الاتصال باستخدام المعرف (ID) لضمان الدقة
         spreadsheet = gc.open_by_key(SPREADSHEET_ID)
         return spreadsheet.sheet1
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"فشل الاتصال بجوجل شيت: {str(e)}")
-        
+
 def fetch_and_sync_transactions():
     headers = {
         "X-Api-Key": API_KEY,
