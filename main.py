@@ -45,14 +45,25 @@ def fetch_and_sync_transactions():
         "Accept": "application/json"
     }
     
-    target_url = f"{API_BASE_URL}/syriatel/history"
+    # المعاملات الأصلية التي تتطلبها المنصة
     params = {
+        "resource": "syriatel",
+        "action": "history",
         "gsm": GSM_NUMBER,
         "period": "7"
     }
+
+    # الاتصال بالرابط الأساسي مباشرة مع الـ params
+    response = requests.get(
+        API_BASE_URL,
+        headers=headers,
+        params=params
+    )
     
-    # هذا السطر سيجبر المتصفح على عرض الرابط كاملاً لنراه
-    raise Exception(f"DEBUG - Full URL being called: {target_url} with params {params}")
+    if response.status_code != 200:
+        raise Exception(response.text)
+
+    result = response.json()
     
     if not result.get("success"):
         return 0
