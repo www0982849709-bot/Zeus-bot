@@ -44,21 +44,18 @@ def fetch_and_sync_transactions():
         "X-Api-Key": API_KEY,
         "Accept": "application/json"
     }
-    params = {
-        "resource": "syriatel",
-        "action": "history",
-        "gsm": GSM_NUMBER,
-        "period": "7"
-    }
+        params = {
+        "resource": "status"
+        }
+
     response = requests.get(
         API_BASE_URL, 
         headers=headers, 
         params=params
     )
     if response.status_code != 200:
-        error_msg = f"الخطأ الفعلي: {response.status_code} - {response.text}"
-        raise Exception(error_msg)
-    
+    raise Exception(response.text)
+
     result = response.json()
     if not result.get("success"):
         return 0
