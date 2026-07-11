@@ -4,10 +4,19 @@ from google.oauth2.service_account import Credentials
 import requests
 
 app = FastAPI()
+import os
+import json
 
-# إعداد الصلاحيات للاتصال بجوجل شيت عبر ملف credentials.json
+# إعداد الصلاحيات للاتصال بجوجل شيت عبر متغير البيئة في Railway
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPES)
+
+creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+if creds_json:
+    creds_info = json.loads(creds_json)
+    creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
+else:
+    creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPES)
+
 gc = gspread.authorize(creds)
 
 SPREADSHEET_NAME = "mydata"  # استبدل هذا باسم الشيت الخاص بك
