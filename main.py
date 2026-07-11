@@ -1,40 +1,80 @@
-import os
-import uvicorn
-from fastapi import FastAPI, Request
-from telegram import Bot, Update
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from fastapi import FastAPI, HTTPException
+import gspread
+from google.oauth2.service_account import Credentials
+import requests
 
-# قراءة المتغيرات السرية من بيئة السيرفر
-TOKEN = os.getenv("TOKEN")
 app = FastAPI()
-bot = Bot(token=TOKEN)
 
-# --- 1. دوال بوت تيليجرام الأساسية التي برمجناها سابقاً ---
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("أهلاً بك في بوت ZEUS ROBERT لخدمات الـ iChancey ⚡")
+# إعداد الصلاحيات للاتصال بجوجل شيت عبر ملف credentials.json
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPES)
+gc = gspread.authorize(creds)
 
-# (يمكنك إضافة بقية دوال الأزرار والقوائم هنا)
+SPREADSHEET_NAME = "mydata"  # استبدل هذا باسم الشيت الخاص بك
 
-# --- 2. مستقبل إشعارات الدفع (Webhook) من سيريتل كاش ---
-@app.post("/api/syriatel/callback")
-async def syriatel_callback(request: Request):
-    data = await request.json()
+# إعدادات API Syria (يمكنك وضعها هنا أو كمتغيرات بيئة)
+API_BASE_URL = "https://apisyria.com/api/v1"
+API_KEY = "9643d2da874acdf7a7f9219e41e3f19266a5ce3459c3834b4ed4ed61147e2594"       # ضع مفتاح الـ API الخاص بك هنا
+GSM_NUMBER = "86623398"          # ضع رقم الموبايل أو كود الكاش هنا
+
+def get_sheet():
+    try:
+        spreadsheet = gc.open(SPREADSHEET_NAME)
+        return spreadsheet.sheet1
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"فشل الاتصال بملف جوجل شيت: {str(e)}")
+
+# دالة لجلب العمليات الواردة من Syriatel Cash وتخزينها في جوجل شيت
+def fetch_and_sync_transactions():
+    headers = {
+        "X-Api-Key": API_KEY,
+        "Accept": "application/json"
+    }
+    params = {
+        "resource": "syriatel",
+        "action": "history",
+        "gsm": GSM_NUMBER,
+        "period": "7"  # جلب آخر 7 أيام
+    }
     
-    # البيانات الواردة من سيريتل كاش حسب توثيقهم
-    transaction_id = data.get("transaction_id")
-    amount = data.get("amount")
-    status = data.get("status")
-    user_telegram_id = data.get("user_id")  # الآيدي الذي أرسلته عند طلب الشحن
-
-    if status == "SUCCESS" and user_telegram_id:
-        # إرسال رسالة تهنئة وشحن الرصيد للمستخدم فوراً
-text = f"✅ **تم شحن رصيدك بنجاح!**\n\n💰 المبلغ: `{amount}` ليرة سورية\n🔖 رقم العملية: `{transaction_id}`"
-        await bot.send_message(chat_id=int(user_telegram_id), text=text, parse_mode="Markdown")
-        return {"status": "success"}
+    response = requests.get(API_BASE_URL, headers=headers, params=params)
+    if response.status_code != 200:
+        raise Exception("فشل الاتصال بخدمة API Syria")
         
-    return {"status": "ignored"}
+    result = response.json()
+    if not result.get("success"):
+        return 0
+        
+    items = result.get("data", {}).get("items", [])
+    sheet = get_sheet()
+    
+    added_count = 0
+    for tx in items:
+        tx_no = tx.get("transaction_no")
+        date = tx.get("date")
+        sender = tx.get("from")
+        receiver = tx.get("to")
+        amount = tx.get("amount")
+        
+        # يمكنك إضافة فحص بسيط للتأكد من عدم تكرار العملية قبل إضافتها
+        # لإضافة البيانات للجدول: [رقم العملية، التاريخ، المرسل، المستلم، المبلغ]
+        sheet.append_row([str(tx_no), str(date), str(sender), str(receiver), str(amount)])
+        added_count += 1
+        
+    return added_count
 
-# تشغيل الخادم
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+@app.get("/sync-payments")
+def sync_payments():
+    try:
+        count = fetch_and_sync_transactions()
+        return {
+            "status": "success", 
+            "message": f"تمت مزامنة وإضافة {count} عملية جديدة إلى جوجل شيت بنجاح"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/")
+def home():
+    return {"status": "online", "message": "سيرفر السيريتل كاش وربط الـ API يعمل بنجاح"}
+        
