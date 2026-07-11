@@ -30,12 +30,8 @@ headers = {
 }
 
 params = {
-    "resource": "syriatel",
-    "action": "history",
-    "gsm": GSM_NUMBER,
-    "period": "7"
+    "resource": "status"
 }
-
 def get_sheet():
     try:
         spreadsheet = gc.open_by_key(SPREADSHEET_ID)
