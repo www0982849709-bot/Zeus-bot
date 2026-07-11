@@ -45,25 +45,14 @@ def fetch_and_sync_transactions():
         "Accept": "application/json"
     }
     
-    # المسار الصحيح لجلب سجل سيريتل
     target_url = f"{API_BASE_URL}/syriatel/history"
-    
-    # المعاملات التابعة لرقم الهاتف والفترة
     params = {
         "gsm": GSM_NUMBER,
         "period": "7"
     }
-
-    response = requests.get(
-        target_url,
-        headers=headers,
-        params=params
-    )
     
-    if response.status_code != 200:
-        raise Exception(response.text)
-
-    result = response.json()
+    # هذا السطر سيجبر المتصفح على عرض الرابط كاملاً لنراه
+    raise Exception(f"DEBUG - Full URL being called: {target_url} with params {params}")
     
     if not result.get("success"):
         return 0
