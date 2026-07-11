@@ -20,7 +20,7 @@ creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 gc = gspread.authorize(creds)
 
 # الثوابت الخاصة بالاتصال بالمنصة الخارجية
-SPREADSHEET_ID = "1pDpFcmXRMJQKOTnx9rAIDtORD-OjPenDdNafU2iayQ"  # ضع معرف الشيت الخاص بك هنا
+SPREADSHEET_ID = "1TCcWGZhe5t5M5qKYQj1qN7FQcSbco1F85Eij39RQhmU"
 API_BASE_URL = "https://apisyria.com/api/v1"
 API_KEY = "9643d2da874acdf7a7f9219e41e3f19266a5ce3459c3834b4ed4ed61147e2594"
 GSM_NUMBER = "0984519477"
