@@ -20,9 +20,21 @@ creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 gc = gspread.authorize(creds)
 
 SPREADSHEET_ID = "1pDpFcmXRMJQKOTnx9rAIDtORD-OjPenDdNafU2iayQ"
-API_BASE_URL = "https://apisyria.com/api/v1/syriatel"
+API_BASE_URL = "https://apisyria.com/api/v1"
 API_KEY = "9643d2da874acdf7a7f9219e41e3f19266a5ce3459c3834b4ed4ed61147e2594"
 GSM_NUMBER = "86623398"
+
+headers = {
+    "X-Api-Key": API_KEY,
+    "Accept": "application/json"
+}
+
+params = {
+    "resource": "syriatel",
+    "action": "history",
+    "gsm": GSM_NUMBER,
+    "period": "7"
+}
 
 def get_sheet():
     try:
