@@ -45,12 +45,19 @@ def fetch_and_sync_transactions():
         "Accept": "application/json"
     }
     
-    # الرابط مع إضافة المسار /status
-    target_url = f"{API_BASE_URL}/status"
+    # المسار الصحيح لجلب سجل سيريتل
+    target_url = f"{API_BASE_URL}/syriatel/history"
+    
+    # المعاملات التابعة لرقم الهاتف والفترة
+    params = {
+        "gsm": GSM_NUMBER,
+        "period": "7"
+    }
 
     response = requests.get(
         target_url,
-        headers=headers
+        headers=headers,
+        params=params
     )
     
     if response.status_code != 200:
