@@ -22,7 +22,7 @@ def get_gc():
         raise HTTPException(status_code=500, detail=f"خطأ في تحليل الاعتمادات أو المصادقة: {type(e).__name__} - {str(e)}")
 
 # الثوابت الخاصة بالاتصال بالمنصة الخارجية وجوجل شيت
-SPREADSHEET_ID = "1TCcWGZhe5t5M5qKYQj1qN7FQcSbco1F85Eij39RQhmU"
+SPREADSHEET_ID = "1pDpFcMxRMJQkOTnx9rAlDtoRD-OjPeNddNafUf2iayQ"
 API_BASE_URL = "https://apisyria.com/api/v1"
 API_KEY = "9643d2da874acdf7a7f9219e41e3f19266a5ce3459c3834b4ed4ed61147e2594"
 GSM_NUMBER = "0984519477"
