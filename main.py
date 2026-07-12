@@ -84,5 +84,38 @@ def fetch_and_sync_transactions():
 def background_sync_job():
     try:
         count = fetch_and_sync_transactions()
-        print(f"المزامنة التلقائية نجحت.
-        
+        print(f"المزامنة التلقائية نجحت. عدد العمليات المضافة: {count}")
+    except Exception as e:
+        print(f"خطأ في المزامنة التلقائية: {str(e)}")
+
+# إعداد المجدول ليعمل كل 5 دقائق
+scheduler = BackgroundScheduler()
+scheduler.add_job(background_sync_job, 'interval', minutes=5)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # تشغيل المجدول عند إقلاع التطبيق
+    scheduler.start()
+    yield
+    # إيقاف المجدول عند إغلاق التطبيق
+    scheduler.shutdown()
+
+app = FastAPI(lifespan=lifespan)
+
+@app.get("/sync-payments")
+def sync_payments():
+    try:
+        count = fetch_and_sync_transactions()
+        return {
+            "status": "success",
+            "message": f"تمت المزامنة يدوياً بنجاح. عدد العمليات المضافة: {count}"
+        }
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/")
+def home():
+    return {"status": "online", "message": "البوت يعمل بنجاح مع الجدولة التلقائية"}
+    
