@@ -9,17 +9,19 @@ app = FastAPI()
 
 # إعدادات جوجل شيت والصلاحيات
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-creds_json_string = os.getenv("GOOGLE_CREDENTIALS")
 
-if creds_json_string:
-    creds_dict = json.loads(creds_json_string)
-else:
-    raise Exception("متغير البيئة GOOGLE_CREDENTIALS غير موجود أو غير صالح")
+def get_gc():
+    creds_json_string = os.getenv("GOOGLE_CREDENTIALS")
+    if not creds_json_string:
+        raise HTTPException(status_code=500, detail="متغير البيئة GOOGLE_CREDENTIALS غير موجود")
+    try:
+        creds_dict = json.loads(creds_json_string)
+        creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+        return gspread.authorize(creds)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"خطأ في تحليل الاعتمادات أو المصادقة: {type(e).__name__} - {str(e)}")
 
-creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-gc = gspread.authorize(creds)
-
-# الثوابت الخاصة بالاتصال بالمنصة الخارجية
+# الثوابت الخاصة بالاتصال بالمنصة الخارجية وجوجل شيت
 SPREADSHEET_ID = "1TCcWGZhe5t5M5qKYQj1qN7FQcSbco1F85Eij39RQhmU"
 API_BASE_URL = "https://apisyria.com/api/v1"
 API_KEY = "9643d2da874acdf7a7f9219e41e3f19266a5ce3459c3834b4ed4ed61147e2594"
@@ -27,10 +29,14 @@ GSM_NUMBER = "0984519477"
 
 def get_sheet():
     try:
+        gc = get_gc()
         spreadsheet = gc.open_by_key(SPREADSHEET_ID)
         return spreadsheet.sheet1
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"خطأ في الاتصال بجوجل شيت: {str(e)}")
+        error_msg = f"{type(e).__name__}: {str(e)}"
+        if not str(e):
+            error_msg = f"{type(e).__name__} (تأكد من مشاركة الشيت مع الـ client_email وصلاحية المحرر)"
+        raise HTTPException(status_code=500, detail=f"خطأ في الاتصال بجوجل شيت: {error_msg}")
 
 def fetch_and_sync_transactions():
     headers = {
@@ -38,7 +44,6 @@ def fetch_and_sync_transactions():
         "Accept": "application/json"
     }
     
-    # المعاملات الأصلية الصحيحة التي تتطلبها المنصة الخارجية
     params = {
         "resource": "syriatel",
         "action": "history",
@@ -46,7 +51,6 @@ def fetch_and_sync_transactions():
         "period": "7"
     }
     
-    # الاتصال بالرابط الأساسي مع المعاملات
     response = requests.get(API_BASE_URL, headers=headers, params=params)
     
     if response.status_code != 200:
@@ -55,7 +59,7 @@ def fetch_and_sync_transactions():
     try:
         result = response.json()
     except json.JSONDecodeError:
-        raise Exception(f"استجابة غير صالحة من السيرفر (ليست JSON): {response.text}")
+        raise Exception(f"استجابة غير صالحة من السيرفر: {response.text}")
     
     if not result.get("success", False):
         return 0
@@ -65,18 +69,12 @@ def fetch_and_sync_transactions():
     
     added_count = 0
     for tx in items:
-        tx_no = tx.get("transaction_no")
-        date = tx.get("date")
-        sender = tx.get("from")
-        receiver = tx.get("to")
-        amount = tx.get("amount")
-        
         sheet.append_row([
-            str(tx_no),
-            str(date),
-            str(sender),
-            str(receiver),
-            str(amount)
+            str(tx.get("transaction_no")),
+            str(tx.get("date")),
+            str(tx.get("from")),
+            str(tx.get("to")),
+            str(tx.get("amount"))
         ])
         added_count += 1
         
@@ -90,6 +88,8 @@ def sync_payments():
             "status": "success",
             "message": f"تمت المزامنة بنجاح. عدد العمليات المضافة: {count}"
         }
+    except HTTPException as he:
+        raise he
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
