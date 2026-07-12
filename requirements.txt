@@ -1,5 +1,7 @@
 fastapi
-uvicorn
-python-telegram-bot
-requests
 gspread
+google-auth
+requests
+apscheduler
+uvicorn
+pydantic
