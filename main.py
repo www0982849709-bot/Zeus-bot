@@ -4,22 +4,22 @@ from fastapi import FastAPI, HTTPException
 import gspread
 from google.oauth2.service_account import Credentials
 import requests
-
-app = FastAPI()
+from apscheduler.schedulers.background import BackgroundScheduler
+from contextlib import asynccontextmanager
 
 # إعدادات جوجل شيت والصلاحيات
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 def get_gc():
     creds_json_string = os.getenv("GOOGLE_CREDENTIALS")
-    if not creds_json_string:
-        raise HTTPException(status_code=500, detail="متغير البيئة GOOGLE_CREDENTIALS غير موجود")
+    if not creds_json_string or not creds_json_string.strip():
+        raise HTTPException(status_code=500, detail="متغير البيئة GOOGLE_CREDENTIALS غير موجود أو فارغ")
     try:
-        creds_dict = json.loads(creds_json_string)
+        creds_dict = json.loads(creds_json_string.strip())
         creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
         return gspread.authorize(creds)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"خطأ في تحليل الاعتمادات أو المصادقة: {type(e).__name__} - {str(e)}")
+        raise HTTPException(status_code=500, detail=f"خطأ في تحليل JSON أو الاعتمادات: {type(e).__name__} - {str(e)}")
 
 # الثوابت الخاصة بالاتصال بالمنصة الخارجية وجوجل شيت
 SPREADSHEET_ID = "1pDpFcMxRMJQkOTnx9rAlDtoRD-OjPeNddNafUf2iayQ"
@@ -80,20 +80,9 @@ def fetch_and_sync_transactions():
         
     return added_count
 
-@app.get("/sync-payments")
-def sync_payments():
+# دالة الجدولة التي تعمل في الخلفية
+def background_sync_job():
     try:
         count = fetch_and_sync_transactions()
-        return {
-            "status": "success",
-            "message": f"تمت المزامنة بنجاح. عدد العمليات المضافة: {count}"
-        }
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.get("/")
-def home():
-    return {"status": "online", "message": "البوت يعمل بنجاح"}
-    
+        print(f"المزامنة التلقائية نجحت.
+        
