@@ -31,13 +31,14 @@ def get_sheet():
     try:
         gc = get_gc()
         spreadsheet = gc.open_by_key(SPREADSHEET_ID)
-        return spreadsheet.sheet1
+        # تعديل ليطابق عمل البوت ويقرا/يكتب في ورقة SMS مباشرة
+        return spreadsheet.worksheet("SMS")
     except Exception as e:
         error_msg = f"{type(e).__name__}: {str(e)}"
         if not str(e):
             error_msg = f"{type(e).__name__} (تأكد من مشاركة الشيت مع الـ client_email وصلاحية المحرر)"
         raise HTTPException(status_code=500, detail=f"خطأ في الاتصال بجوجل شيت: {error_msg}")
-
+        
 def fetch_and_sync_transactions():
     headers = {
         "X-Api-Key": API_KEY,
